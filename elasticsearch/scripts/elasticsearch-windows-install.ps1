@@ -8,10 +8,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -80,14 +80,14 @@ function Log-Error(){
 	$args | Write-Host -ForegroundColor Red
 }
 
-Set-Alias -Name lmsg -Value Log-Output -Description "Displays an informational message in green color" 
-Set-Alias -Name lerr -Value Log-Error -Description "Displays an error message in red color" 
+Set-Alias -Name lmsg -Value Log-Output -Description "Displays an informational message in green color"
+Set-Alias -Name lerr -Value Log-Error -Description "Displays an error message in red color"
 
 function Initialize-Disks{
-	
+
     # Get raw disks
     $disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
-    
+
     # Get letters starting from F
     $label = 'datadisk-'
     $letters = 70..90 | ForEach-Object { ([char]$_) }
@@ -109,7 +109,7 @@ function Initialize-Disks{
 			Break
 		}
 	}
-    
+
     return $letterIndex
 }
 
@@ -126,8 +126,8 @@ function Create-DataFolders([int]$numDrives, [string]$folder)
 
     $retVal = $pathSet -join ','
 
-    lmsg "Created data folders: $retVal" 
-    
+    lmsg "Created data folders: $retVal"
+
     return $retVal
 }
 
@@ -142,19 +142,19 @@ function Download-Jdk
 	try{
 			$destination = "$targetDrive`:\Downloads\Java\jdk-8u65-windows-x64.exe"
 			$source = if ($downloadLocation -eq '') {'http://download.oracle.com/otn-pub/java/jdk/8u65-b17/jdk-8u65-windows-x64.exe'} else {$downloadLocation}
-            
+
             # create folder if doesn't exists and suppress the output
             $folder = split-path $destination
             if (!(Test-Path $folder)) {
                 New-Item -Path $folder -ItemType Directory | Out-Null
             }
 
-			$client = new-object System.Net.WebClient 
+			$client = new-object System.Net.WebClient
 			$cookie = "oraclelicense=accept-securebackup-cookie"
 
             lmsg "Downloading JDK from $source to $destination"
 
-			$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie) 
+			$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
 			$client.downloadFile($source, $destination) | Out-Null
 		}catch [System.Net.WebException],[System.Exception]{
 			lerr $_.Exception.Message
@@ -186,17 +186,17 @@ function Install-Jdk
 		$proc = Start-Process -FilePath $sourceLoc -ArgumentList "/s INSTALLDIR=`"$installPath`" /L `"$logPath`"" -Wait -PassThru -RedirectStandardOutput $psLog -RedirectStandardError $psErr -NoNewWindow
         $proc.WaitForExit()
         lmsg "JDK installed under $installPath" "Log file location: $logPath"
-        
+
         #if($proc.ExitCode -ne 0){
             #THROW "JDK installation error"
         #}
-		
+
     }catch [System.Exception]{
 		lerr $_.Exception.Message
         lerr $_.Exception.StackTrace
 	    Break
 	}
-	
+
 	return $installPath
 }
 
@@ -212,14 +212,14 @@ function Download-ElasticSearch
 	try{
 			$source = if ($elasticVersion -match '2.') {"https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/zip/elasticsearch/$elasticVersion/elasticsearch-$elasticVersion.zip"} else { "https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-$elasticVersion.zip" }
 			$destination = "$targetDrive`:\Downloads\ElasticSearch\Elastic-Search.zip"
-            
+
             # create folder if doesn't exists and suppress the output
             $folder = split-path $destination
             if (!(Test-Path $folder)) {
                 New-Item -Path $folder -ItemType Directory | Out-Null
             }
 
-			$client = new-object System.Net.WebClient 
+			$client = new-object System.Net.WebClient
 
             lmsg "Downloading Elasticsearch version $elasticVersion from $source to $destination"
 
@@ -234,11 +234,11 @@ function Download-ElasticSearch
 }
 
 function Unzip-Archive($archive, $destination){
-	
+
 	$shell = new-object -com shell.application
 
 	$zip = $shell.NameSpace($archive)
-	
+
 	# Test destination folder
 	if (!(Test-Path $destination))
 	{
@@ -255,10 +255,10 @@ function Unzip-Archive($archive, $destination){
 function SetEnv-JavaHome($jdkInstallLocation)
 {
     $homePath = $jdkInstallLocation
-    
+
     lmsg "Setting JAVA_HOME in the registry to $homePath..."
 	Set-ItemProperty -Path $regEnvPath -Name JAVA_HOME -Value $homePath | Out-Null
-    
+
     lmsg 'Setting JAVA_HOME for the current session...'
     Set-Item Env:JAVA_HOME "$homePath" | Out-Null
 
@@ -299,9 +299,9 @@ function SetEnv-HeapSize
 
 function Install-ElasticSearch ($driveLetter, $elasticSearchZip, $subFolder = $elasticSearchBaseFolder)
 {
-	# Designate unzip location 
+	# Designate unzip location
 	$elasticSearchPath =  Join-Path "$driveLetter`:" -ChildPath $subFolder
-	
+
 	# Unzip
 	Unzip-Archive $elasticSearchZip $elasticSearchPath
 
@@ -355,8 +355,8 @@ function ElasticSearch-InstallService($scriptPath)
 {
 	# Install and start elastic search as a service
 	$elasticService = (get-service | Where-Object {$_.Name -match "elasticsearch"}).Name
-	if($elasticService -eq $null) 
-    {	
+	if($elasticService -eq $null)
+    {
         # First set heap size
         SetEnv-HeapSize
 
@@ -378,7 +378,7 @@ function ElasticSearch-StartService()
         lmsg 'Starting elasticsearch service...'
         Start-Service -Name $elasticService | Out-Null
         $svc = Get-Service | Where-Object { $_.Name -Match 'elasticsearch'}
-        
+
         if($svc -ne $null)
         {
             $svc.WaitForStatus('Running', '00:00:10')
@@ -404,14 +404,14 @@ function Jmeter-Download($drive)
 	try{
 			$destination = "$drive`:\Downloads\Jmeter\Jmeter_server_agent.zip"
 			$source = 'http://jmeter-plugins.org/downloads/file/ServerAgent-2.2.1.zip'
-            
+
             # create folder if doesn't exists and suppress the output
             $folder = split-path $destination
             if (!(Test-Path $folder)) {
                 New-Item -Path $folder -ItemType Directory | Out-Null
             }
 
-			$client = new-object System.Net.WebClient 
+			$client = new-object System.Net.WebClient
 
             lmsg "Downloading Jmeter SA from $source to $destination"
 
@@ -421,7 +421,7 @@ function Jmeter-Download($drive)
             lerr $_.Exception.StackTrace
 			Break
 		}
-    
+
     return $destination
 }
 
@@ -433,7 +433,7 @@ function Jmeter-Unzip($source, $drive)
 	$zip = $shell.NameSpace($source)
 
     $loc = "$drive`:\jmeter_sa"
-	
+
 	# Test destination folder
 	if (!(Test-Path $loc))
 	{
@@ -455,7 +455,7 @@ function Jmeter-ConfigFirewall
     {
         lmsg 'Adding firewall rule - Allow Jmeter Inbound Port ' $i
         New-NetFirewallRule -Name "Jmeter_ServerAgent_IN_$i" -DisplayName "Allow Jmeter Inbound Port $i" -Protocol tcp -LocalPort $i -Action Allow -Enabled True -Direction Inbound | Out-Null
-    
+
         lmsg 'Adding firewall rule - Allow Jmeter Outbound Port ' $i
         New-NetFirewallRule -Name "Jmeter_ServerAgent_OUT_$i" -DisplayName "Allow Jmeter Outbound Port $i" -Protocol tcp -LocalPort $i -Action Allow -Enabled True -Direction Outbound | Out-Null
     }
@@ -472,7 +472,7 @@ function Elasticsearch-OpenPorts
 
     lmsg 'Adding firewall rule - Allow Elasticsearch Inter Node Communication Inbound Port 9300'
     New-NetFirewallRule -Name 'ElasticSearch_In_Unicast' -DisplayName 'Allow Elasticsearch Inter Node Communication Inbound Port 9300' -Protocol tcp -LocalPort 9300 -Action Allow -Enabled True -Direction Inbound | Out-Null
-    
+
     lmsg 'Adding firewall rule - Allow Elasticsearch Inter Node Communication Outbound Port 9300'
     New-NetFirewallRule -Name 'ElasticSearch_Out_Unicast' -DisplayName 'Allow Elasticsearch Inter Node Communication Outbound Port 9300' -Protocol tcp -LocalPort 9300 -Action Allow -Enabled True -Direction Outbound | Out-Null
 
@@ -490,10 +490,10 @@ function Install-WorkFlow
 {
 	# Start script
     Startup-Output
-	
+
     # Discover raw data disks and format them
     $dc = Initialize-Disks
-    
+
     # Create data folders on raw disks
     if($dc -gt 0)
     {
@@ -502,35 +502,35 @@ function Install-WorkFlow
 
 	# Set first drive
     $firstDrive = (get-location).Drive.Name
-    
+
     # Download Jdk
-	$jdkSource = Download-Jdk $firstDrive
-	
+	$jdkSource = Download-Jdk $firstDrive $jdkDownloadLocation
+
 	# Install Jdk
 	$jdkInstallLocation = Install-Jdk $jdkSource $firstDrive
 
 	# Download elastic search zip
 	$elasticSearchZip = Download-ElasticSearch $elasticSearchVersion $firstDrive
-	
+
 	# Unzip (install) elastic search
 	if($elasticSearchBaseFolder.Length -eq 0) { $elasticSearchBaseFolder = 'elasticSearch'}
 	$elasticSearchInstallLocation = Install-ElasticSearch $firstDrive $elasticSearchZip
 
 	# Set JAVA_HOME
     SetEnv-JavaHome $jdkInstallLocation
-	
+
 	# Configure cluster name and other properties
 	# Cluster name
 	if($elasticClusterName.Length -eq 0) { $elasticClusterName = 'elasticsearch_cluster' }
-        
+
     # Unicast host setup
     if($discoveryEndpoints.Length -ne 0) { $ipAddresses = Implode-Host2 $discoveryEndpoints }
-		
+
 	# Extract install folders
 	$elasticSearchBinParent = (gci -path $elasticSearchInstallLocation -filter "bin" -Recurse).Parent.FullName
 	$elasticSearchBin = Join-Path $elasticSearchBinParent -ChildPath "bin"
 	$elasticSearchConfFile = Join-Path $elasticSearchBinParent -ChildPath "config\elasticsearch.yml"
-		
+
 	# Set values
     lmsg "Configure cluster name to $elasticClusterName"
     $textToAppend = "`n#### Settings automatically added by deployment script`ncluster.name: $elasticClusterName"
@@ -586,14 +586,14 @@ function Install-WorkFlow
 		if ($elasticSearchVersion -match '2.')
 		{
 			cmd.exe /C "$elasticSearchBin\plugin.bat install cloud-azure"
-			
+
 			$textToAppend = $textToAppend + "`ncloud.azure.storage.default.account: $po"
 			$textToAppend = $textToAppend + "`ncloud.azure.storage.default.key: $r"
 		}
 		else
 		{
 			cmd.exe /C "$elasticSearchBin\plugin.bat -i elasticsearch/elasticsearch-cloud-azure/2.8.2"
-			
+
 			$textToAppend = $textToAppend + "`ncloud.azure.storage.account: $po"
 			$textToAppend = $textToAppend + "`ncloud.azure.storage.key: $r"
 		}
@@ -612,14 +612,14 @@ function Install-WorkFlow
             $textToAppend = $textToAppend + "`nmarvel.agent.exporter.hosts: [$marvelIPAddresses]"
         }
     }
-        
+
     if ($marvelOnlyNode -and ($elasticSearchVersion -match '1.'))
     {
         $textToAppend = $textToAppend + "`nmarvel.agent.enabled: false"
     }
 
     Add-Content $elasticSearchConfFile $textToAppend
-		
+
     # Add firewall exceptions
     Elasticsearch-OpenPorts
 
